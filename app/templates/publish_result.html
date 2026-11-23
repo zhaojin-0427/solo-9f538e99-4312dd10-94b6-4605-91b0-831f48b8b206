@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}修订 {{ record.revision }} · 发布记录{% endblock %}
+{% block body %}
+<div class="card">
+  <h2>修订 {{ record.revision }} 已生效</h2>
+  <p class="muted">
+    文件：{{ record.filename }} ｜ 发布时间：{{ record.published_at }} ｜
+    非空数据行：{{ record.submitted_rows }} ｜ 问题行：{{ record.issues|length }}
+  </p>
+  <p>
+    <a href="/timetable.csv">下载当前班表 CSV</a> ｜
+    <a href="/publish">继续发布下一修订</a> ｜
+    <a href="/">返回首页</a>
+  </p>
+</div>
+
+{% if record.issues %}
+<div class="card" id="issues">
+  <h2 class="error">本次修订的问题行（{{ record.issues|length }} 条）</h2>
+  <p class="muted">
+    这些行的班次号未被采用；对应班次若已有旧记录，沿用发布前最新值。
+  </p>
+  <table>
+    <thead><tr><th>CSV 行号</th><th>班次号</th><th>问题与处理</th></tr></thead>
+    <tbody>
+      {% for issue in record.issues %}
+      <tr>
+        <td>{{ issue.line_number }}</td>
+        <td>{{ issue.trip_id }}</td>
+        <td class="error">{{ issue.message }}{% if issue.retained %}（该班次沿用发布前最新值）{% elif issue.trip_id != "（空）" %}（该班次本次未采用新值）{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card ok"><strong>本次来稿没有字段问题行，全部合格行均已生效。</strong></div>
+{% endif %}
+
+<div class="card">
+  <h2>生效明细</h2>
+  {% if record.missing_id_rows %}
+  <div class="warn">
+    来稿第 {{ record.missing_id_rows|join("、") }} 行缺少班次号，因此按规则保留新表漏列的全部旧班次。
+  </div>
+  {% endif %}
+  <p class="muted">
+    新增 {{ record.applied|selectattr("action", "equalto", "added")|list|length }} 个班次，
+    替换 {{ record.applied|selectattr("action", "equalto", "replaced")|list|length }} 个班次，
+    沿用旧值 {{ record.kept|length }} 个{% if record.removed %}，移除漏列旧班次 {{ record.removed|length }} 个{% else %}，未移除任何旧班次{% endif %}。
+  </p>
+  <table>
+    <thead><tr><th>班次号</th><th>处理</th></tr></thead>
+    <tbody>
+      {% for item in record.applied %}
+      <tr><td>{{ item.trip_id }}</td><td>{{ "新增" if item.action == "added" else "替换" }}</td></tr>
+      {% endfor %}
+      {% for trip_id in record.kept %}
+      <tr><td>{{ trip_id }}</td><td>沿用旧值（本次问题行）</td></tr>
+      {% endfor %}
+      {% for trip_id in record.removed %}
+      <tr><td>{{ trip_id }}</td><td class="error">移除（新表漏列）</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

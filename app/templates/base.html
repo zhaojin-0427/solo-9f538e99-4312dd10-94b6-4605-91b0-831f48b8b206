@@ -6,8 +6,10 @@
   <title>{% block title %}换版接驳核查{% endblock %}</title>
   <style>
     body { font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; margin: 0; background: #f4f6f8; color: #1f2933; }
-    header { background: #1d4ed8; color: #fff; padding: 16px 28px; }
+    header { background: #1d4ed8; color: #fff; padding: 16px 28px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
     header h1 { margin: 0; font-size: 20px; }
+    header nav a { color: #dbeafe; text-decoration: none; font-size: 14px; }
+    header nav a:hover { color: #fff; text-decoration: underline; }
     main { max-width: 1080px; margin: 24px auto; padding: 0 20px; }
     .card { background: #fff; border-radius: 10px; padding: 22px 26px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
     h2 { font-size: 17px; margin-top: 0; }
@@ -29,7 +31,13 @@
   </style>
 </head>
 <body>
-  <header><h1>公交时刻表换版 · 到站接驳核查</h1></header>
+  <header>
+    <h1>公交时刻表平台</h1>
+    <nav>
+      <a href="/">换版接驳核查</a> ｜ <a href="/publish">发布班表</a> ｜
+      <a href="/timetable.csv">下载当前班表</a>
+    </nav>
+  </header>
   <main>
     {% block body %}{% endblock %}
   </main>

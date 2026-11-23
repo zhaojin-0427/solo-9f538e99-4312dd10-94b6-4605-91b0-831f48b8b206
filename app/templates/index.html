@@ -3,6 +3,9 @@
 <div class="card">
   <h2>核查条件</h2>
   <p class="muted">
+    <a href="/publish">前往班表发布页</a> ｜ <a href="/timetable.csv">下载当前已生效班表</a>
+  </p>
+  <p class="muted">
     上传同一换乘站的新旧两版时刻表 CSV，填写核查日期范围与最长等车分钟数。
     系统按班次号匹配两版在同一运营日都开行的到站班次，找出<strong>旧版有车可接、新版无车可接</strong>的首个运营日。
     等待时间达到上限仍算可接驳；接驳车可属于相邻运营日（支持跨午夜）。
@@ -22,7 +25,6 @@
     <strong>CSV 存在问题行，暂不出结论。请修正后重新上传。</strong>
   </div>
   {% endif %}
-
   <form method="post" action="/check" enctype="multipart/form-data">
     <div class="grid">
       <div>
@@ -61,6 +63,9 @@
   {% if old_parse.header_error %}
     <p class="error">{{ old_parse.header_error }}</p>
   {% endif %}
+  {% if old_parse.csv_error %}
+    <p class="error">{{ old_parse.csv_error }}</p>
+  {% endif %}
   {% if old_parse.errors %}
   <table>
     <thead><tr><th>CSV 行号</th><th>班次号</th><th>问题</th></tr></thead>
@@ -79,6 +84,9 @@
   <h2>新版 CSV 问题</h2>
   {% if new_parse.header_error %}
     <p class="error">{{ new_parse.header_error }}</p>
+  {% endif %}
+  {% if new_parse.csv_error %}
+    <p class="error">{{ new_parse.csv_error }}</p>
   {% endif %}
   {% if new_parse.errors %}
   <table>

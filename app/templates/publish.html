@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}发布班表 · 公交时刻表平台{% endblock %}
+{% block body %}
+<div class="card">
+  <h2>发布新版班表</h2>
+  <p class="muted">
+    填写高于当前已生效版本的递增修订号，上传现有格式的班表 CSV。
+    表头不合规或 CSV 无法完整解析时整份拒收；字段有错或同号重复的行会列在问题清单，
+    这些班次沿用已生效的旧记录。班表与问题清单一同生效。
+  </p>
+  <p class="muted">
+    当前已生效版本：<strong>修订 {{ current_revision }}</strong>
+    {% if current_record %}（{{ current_record.published_at }} 发布，{{ current_record.filename }}）{% endif %}
+    ｜ <a href="/timetable.csv">下载当前班表 CSV</a>
+    {% if current_record %}｜ <a href="/publish/{{ current_revision }}">查看上次修订记录</a>{% endif %}
+  </p>
+
+  {% if form_errors %}
+  <div class="alert">
+    <strong>来稿未生效，当前仍为修订 {{ current_revision }}：</strong>
+    <ul class="tight">
+      {% for e in form_errors %}<li class="error">{{ e }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <form method="post" action="/publish" enctype="multipart/form-data">
+    <div class="grid">
+      <div>
+        <label for="revision">修订号（必须高于 {{ current_revision }}）</label>
+        <input type="number" id="revision" name="revision" min="1" step="1"
+               value="{{ submitted_revision or next_revision }}" required>
+      </div>
+      <div>
+        <label for="timetable_csv">班表 CSV</label>
+        <input type="file" id="timetable_csv" name="timetable_csv"
+               accept=".csv,text/csv" required>
+      </div>
+      <div></div>
+    </div>
+    <button type="submit">发布并生效</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>合并规则</h2>
+  <ul class="tight muted">
+    <li>表头列必须齐全且无重复、无未知列；CSV 引号必须成对闭合，否则整份拒收。</li>
+    <li>班次号唯一且字段全部合格的行：新增或替换。</li>
+    <li>同号重复或字段有错的行：列入问题清单；该班次已有旧记录时沿用发布前最新值。</li>
+    <li>只要有非空数据行缺班次号，新表漏列的旧班次一律保留；否则移除漏列的旧班次。</li>
+  </ul>
+</div>
+{% endblock %}
