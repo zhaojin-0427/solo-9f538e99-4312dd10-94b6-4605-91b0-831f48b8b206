@@ -1,0 +1,17 @@
+{% macro fmt_minute(minute) -%}
+{%- set day_offset = minute // 1440 -%}
+{%- set within = minute % 1440 -%}
+{%- set hh = "%02d"|format(within // 60) -%}
+{%- set mm = "%02d"|format(within % 60) -%}
+{{ hh }}:{{ mm }}{% if day_offset %}(+{{ day_offset }}天){% endif %}
+{%- endmacro %}
+
+{% macro fmt_wait(minutes) -%}
+{%- set hours = minutes // 60 -%}
+{%- set remain = minutes % 60 -%}
+{%- if minutes == 0 -%}0 分钟
+{%- elif hours and remain -%}{{ hours }} 小时 {{ remain }} 分钟
+{%- elif hours -%}{{ hours }} 小时
+{%- else -%}{{ remain }} 分钟
+{%- endif -%}
+{%- endmacro %}

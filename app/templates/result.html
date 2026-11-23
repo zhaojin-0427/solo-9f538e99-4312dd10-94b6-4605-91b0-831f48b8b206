@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_macros.html" import fmt_minute, fmt_wait %}
+{% block title %}核查结果 · 换版接驳核查{% endblock %}
+{% block body %}
+<div class="card">
+  <h2>核查范围</h2>
+  <p class="muted">
+    旧版文件：{{ old_name }} ｜ 新版文件：{{ new_name }}<br>
+    日期范围：{{ range_start }} 至 {{ range_end }}（含首尾）｜ 最长等车：{{ max_wait }} 分钟（达到上限仍可接驳）
+  </p>
+  <p class="muted">共匹配并比较两版共同到站班次 {{ result.compared_arrivals }} 个。</p>
+</div>
+
+{% if result.lost %}
+<div class="card">
+  <h2 class="error">失去接驳的到站班次（{{ result.lost|length }} 个）</h2>
+  <p class="muted">下列班次在标注的首个运营日，旧版尚有发车可接而新版无车可接；表中列出当日旧版全部可接发车及其自身运营日。</p>
+  {% for item in result.lost %}
+  <h3>到站班次 {{ item.arrival_trip_id }} ｜ 首个失去接驳的运营日：{{ item.first_day }}</h3>
+  <p class="muted">
+    到站时刻（从当日零点起）：旧版 {{ fmt_minute(item.old_arrival_minute) }}（{{ item.old_arrival_minute }} 分）
+    ｜ 新版 {{ fmt_minute(item.new_arrival_minute) }}（{{ item.new_arrival_minute }} 分）
+  </p>
+  <table>
+    <thead>
+      <tr><th>旧版可接发车班次号</th><th>发车班次运营日</th><th>等待时间</th></tr>
+    </thead>
+    <tbody>
+      {% for conn in item.old_connections %}
+      <tr>
+        <td>{{ conn.departure_trip_id }}</td>
+        <td>{{ conn.departure_day }}</td>
+        <td>{{ fmt_wait(conn.wait_minutes) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card ok">
+  <strong>在核查范围内，所有两版共同开行的到站班次均未失去接驳。</strong>
+</div>
+{% endif %}
+
+{% if result.only_old_arrivals or result.only_new_arrivals %}
+<div class="card">
+  <h2>未参与匹配的到站班次（仅提示，不影响结论）</h2>
+  {% if result.only_old_arrivals %}
+  <p>仅旧版存在（新版已取消或改号）：
+    {% for trip_id in result.only_old_arrivals %}<code>{{ trip_id }}</code> {% endfor %}
+  </p>
+  {% endif %}
+  {% if result.only_new_arrivals %}
+  <p>仅新版存在：
+    {% for trip_id in result.only_new_arrivals %}<code>{{ trip_id }}</code> {% endfor %}
+  </p>
+  {% endif %}
+</div>
+{% endif %}
+
+<p><a href="/">← 返回重新核查</a></p>
+{% endblock %}

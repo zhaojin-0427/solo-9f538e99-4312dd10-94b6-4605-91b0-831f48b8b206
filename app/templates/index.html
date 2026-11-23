@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="card">
+  <h2>核查条件</h2>
+  <p class="muted">
+    上传同一换乘站的新旧两版时刻表 CSV，填写核查日期范围与最长等车分钟数。
+    系统按班次号匹配两版在同一运营日都开行的到站班次，找出<strong>旧版有车可接、新版无车可接</strong>的首个运营日。
+    等待时间达到上限仍算可接驳；接驳车可属于相邻运营日（支持跨午夜）。
+  </p>
+
+  {% if form_errors %}
+  <div class="alert">
+    <strong>输入有误，请修改后重试：</strong>
+    <ul class="tight">
+      {% for e in form_errors %}<li class="error">{{ e }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if old_parse or new_parse %}
+  <div class="alert">
+    <strong>CSV 存在问题行，暂不出结论。请修正后重新上传。</strong>
+  </div>
+  {% endif %}
+
+  <form method="post" action="/check" enctype="multipart/form-data">
+    <div class="grid">
+      <div>
+        <label for="old_csv">旧版时刻表 CSV</label>
+        <input type="file" id="old_csv" name="old_csv" accept=".csv,text/csv" required>
+        {% if old_name %}<p class="muted">已上传：{{ old_name }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="new_csv">新版时刻表 CSV</label>
+        <input type="file" id="new_csv" name="new_csv" accept=".csv,text/csv" required>
+        {% if new_name %}<p class="muted">已上传：{{ new_name }}</p>{% endif %}
+      </div>
+      <div>
+        <label for="max_wait">最长等车分钟数（达到上限仍可接驳）</label>
+        <input type="number" id="max_wait" name="max_wait" min="0" step="1" placeholder="例如 30" required>
+      </div>
+    </div>
+    <div class="grid">
+      <div>
+        <label for="range_start">核查开始日期（含）</label>
+        <input type="date" id="range_start" name="range_start" required>
+      </div>
+      <div>
+        <label for="range_end">核查结束日期（含）</label>
+        <input type="date" id="range_end" name="range_end" required>
+      </div>
+      <div></div>
+    </div>
+    <button type="submit">开始核查</button>
+  </form>
+</div>
+
+{% if old_parse %}
+<div class="card">
+  <h2>旧版 CSV 问题</h2>
+  {% if old_parse.header_error %}
+    <p class="error">{{ old_parse.header_error }}</p>
+  {% endif %}
+  {% if old_parse.errors %}
+  <table>
+    <thead><tr><th>CSV 行号</th><th>班次号</th><th>问题</th></tr></thead>
+    <tbody>
+      {% for err in old_parse.errors %}
+      <tr><td>{{ err.line_number }}</td><td>{{ err.trip_id }}</td><td class="error">{{ err.message }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if new_parse %}
+<div class="card">
+  <h2>新版 CSV 问题</h2>
+  {% if new_parse.header_error %}
+    <p class="error">{{ new_parse.header_error }}</p>
+  {% endif %}
+  {% if new_parse.errors %}
+  <table>
+    <thead><tr><th>CSV 行号</th><th>班次号</th><th>问题</th></tr></thead>
+    <tbody>
+      {% for err in new_parse.errors %}
+      <tr><td>{{ err.line_number }}</td><td>{{ err.trip_id }}</td><td class="error">{{ err.message }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>CSV 列格式说明</h2>
+  <p class="muted">表头（顺序不限，UTF-8 编码）：</p>
+  <p><code>班次号, 类型, 分钟数, 常规开始日, 常规结束日, 星期, 临时加开日期, 停运日期</code></p>
+  <ul class="tight muted">
+    <li><strong>类型</strong>：到站 / 发车（也接受 arrival / departure）。</li>
+    <li><strong>分钟数</strong>：从本运营日零点起算的整数分钟，可跨午夜（如 1470 表示次日 00:30），上限 10079。</li>
+    <li><strong>日期</strong>：YYYY-MM-DD；<strong>星期</strong>：1-7（周一到周日），或中文一/二/…/日，多个用逗号分隔。</li>
+    <li><strong>加开 / 停运</strong>：多个日期用分号分隔，可留空；同一日期既加开又停运视为问题行。</li>
+    <li>临时调整按班次自己的运营日覆盖周历：停运日即使命中星期也不开行，加开日即使不命中星期也开行。</li>
+  </ul>
+  <p class="muted">
+    示例文件：
+    <a href="/samples/old.csv">old.csv（旧版）</a> ·
+    <a href="/samples/new.csv">new.csv（新版）</a>
+  </p>
+</div>
+{% endblock %}
